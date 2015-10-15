@@ -1,0 +1,35 @@
+FROM        phusion/baseimage:0.9.17
+MAINTAINER  pitrho
+
+# Set up the environment
+#
+ENV DEBIAN_FRONTEND noninteractive
+
+# Install packages
+RUN apt-get update && apt-get install -y -q \
+        wget \
+        openjdk-7-jre \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Get elasticsearch
+RUN cd /opt \
+  && wget "https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-%%ELASTICSEARCH_VERSION%%.tar.gz" -q \
+  && tar -xf "elasticsearch-%%ELASTICSEARCH_VERSION%%.tar.gz" \
+  && rm "elasticsearch-%%ELASTICSEARCH_VERSION%%.tar.gz" \
+  && mv "elasticsearch-%%ELASTICSEARCH_VERSION%%" elasticsearch
+RUN useradd -s /bin/false -r -M elasticsearch
+
+ENV ES_LOG_DIR=/var/log/elasticsearch
+ENV ES_DATA_DIR=/var/lib/elasticsearch
+
+# Add all services files
+RUN mkdir /etc/service/elasticsearch
+COPY run.sh /etc/service/elasticsearch/run
+#COPY enable_backups.sh /enable_backups.sh
+#COPY backu.sh /backup.sh
+
+EXPOSE 9200
+
+# Use baseimage-docker's init system.
+CMD ["/sbin/my_init"]
